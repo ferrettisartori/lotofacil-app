@@ -1,0 +1,24 @@
+export type Concurso = {
+  id: number;
+  numero_concurso: number;
+  data_sorteio: string;
+  bola_1: number;
+  bola_2: number;
+  bola_3: number;
+  bola_4: number;
+  bola_5: number;
+  bola_6: number;
+  bola_7: number;
+  bola_8: number;
+  bola_9: number;
+  bola_10: number;
+  bola_11: number;
+  bola_12: number;
+  bola_13: number;
+  bola_14: number;
+  bola_15: number;
+  dezenas: number[];
+  soma_dezenas?: number;
+  qtd_pares?: number;
+  qtd_impares?: number;
+};

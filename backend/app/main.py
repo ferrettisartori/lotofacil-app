@@ -9,6 +9,7 @@ from .crud import (
     criar_concurso,
     atualizar_concurso,
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Lotofácil API")
 
@@ -26,6 +27,10 @@ def get_concursos(db: Session = Depends(get_db)):
 @app.get("/concursos/ultimo", response_model=ConcursoResponse)
 def get_ultimo_concurso(db: Session = Depends(get_db)):
     return buscar_ultimo_concurso(db)
+
+@app.get("/concursos/id/{concurso_id}", response_model=ConcursoResponse)
+def get_concurso_por_id(concurso_id: int, db: Session = Depends(get_db)):
+    return buscar_concurso_por_id(db, concurso_id)
 
 
 @app.get("/concursos/{numero_concurso}", response_model=ConcursoResponse)
@@ -45,3 +50,20 @@ def put_concurso(
     db: Session = Depends(get_db)
 ):
     return atualizar_concurso(db, concurso_id, concurso)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from .crud import (
+    listar_concursos,
+    buscar_concurso_por_numero,
+    buscar_concurso_por_id,
+    buscar_ultimo_concurso,
+    criar_concurso,
+    atualizar_concurso,
+)

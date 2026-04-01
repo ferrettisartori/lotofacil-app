@@ -177,3 +177,11 @@ def atualizar_concurso(db: Session, concurso_id: int, dados: ConcursoUpdate):
     db.commit()
     db.refresh(concurso)
     return serializar_concurso(concurso)
+
+def buscar_concurso_por_id(db: Session, concurso_id: int):
+    concurso = db.query(Concurso).filter(Concurso.id == concurso_id).first()
+
+    if not concurso:
+        raise HTTPException(status_code=404, detail="Concurso não encontrado.")
+
+    return serializar_concurso(concurso)
