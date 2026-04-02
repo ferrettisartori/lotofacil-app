@@ -162,3 +162,49 @@ class SimulacaoHistoricoResponse(BaseModel):
     total_14_pontos: int
     total_15_pontos: int
     resultados: list[ResultadoConcursoSimulado]
+
+class JogoMetodoResponse(BaseModel):
+    codigo: str
+    dezenas: list[int]
+
+
+class Metodo1Response(BaseModel):
+    numero_concurso_alvo: int
+    numero_concurso_base: int
+    dezenas_sorteadas_base: list[int]
+    dezenas_nao_sorteadas_base: list[int]
+    fixas_sorteadas: list[int]
+    fixas_nao_sorteadas: list[int]
+    grupo_a: list[int]
+    grupo_b: list[int]
+    grupo_r: list[int]
+    grupo_s: list[int]
+    jogos: list[JogoMetodoResponse]
+
+class SimulacaoMetodo1Request(BaseModel):
+    concurso_inicial: int
+    concurso_final: int
+
+
+class ResultadoMetodo1JogoResponse(BaseModel):
+    codigo: str
+    dezenas: list[int]
+    acertos: int
+
+
+class ResultadoMetodo1ConcursoResponse(BaseModel):
+    numero_concurso: int
+    numero_concurso_base: int
+    resultado_oficial: list[int]
+    jogos: list[ResultadoMetodo1JogoResponse]
+
+
+class SimulacaoMetodo1Response(BaseModel):
+    total_concursos: int
+    total_jogos_gerados: int
+    total_11_pontos: int
+    total_12_pontos: int
+    total_13_pontos: int
+    total_14_pontos: int
+    total_15_pontos: int
+    resultados: list[ResultadoMetodo1ConcursoResponse]

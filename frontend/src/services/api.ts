@@ -194,3 +194,60 @@ export async function simularHistorico(
 
   return data;
 }
+
+export type SimulacaoMetodo1Payload = {
+  concurso_inicial: number;
+  concurso_final: number;
+};
+
+export type ResultadoMetodo1JogoResponse = {
+  codigo: string;
+  dezenas: number[];
+  acertos: number;
+};
+
+export type ResultadoMetodo1ConcursoResponse = {
+  numero_concurso: number;
+  numero_concurso_base: number;
+  resultado_oficial: number[];
+  jogos: ResultadoMetodo1JogoResponse[];
+};
+
+export type SimulacaoMetodo1Response = {
+  total_concursos: number;
+  total_jogos_gerados: number;
+  total_11_pontos: number;
+  total_12_pontos: number;
+  total_13_pontos: number;
+  total_14_pontos: number;
+  total_15_pontos: number;
+  resultados: ResultadoMetodo1ConcursoResponse[];
+};
+
+export async function simularMetodo1(
+  payload: SimulacaoMetodo1Payload
+): Promise<SimulacaoMetodo1Response> {
+  const response = await fetch(`${API_URL}/simulacoes/metodo-1`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    if (typeof data.detail === "string") {
+      throw new Error(data.detail);
+    }
+
+    if (Array.isArray(data.detail)) {
+      throw new Error(data.detail.map((item: any) => item.msg).join(" | "));
+    }
+
+    throw new Error("Erro ao executar a simulação do Método 1.");
+  }
+
+  return data;
+}

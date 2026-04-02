@@ -1,14 +1,14 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-
 from .models import Concurso
 from .schemas import (
     ConcursoCreate,
     ConcursoUpdate,
     ConferenciaJogoRequest,
     SimulacaoHistoricoRequest,
+    SimulacaoMetodo1Request,
 )
-
+from .metodos import gerar_jogos_metodo_1
 
 def ordenar_bolas(dados: dict) -> dict:
     bolas = [
@@ -271,6 +271,74 @@ def simular_historico(db: Session, dados: SimulacaoHistoricoRequest):
     return {
         "total_concursos": total_concursos,
         "total_jogos_testados": total_jogos_testados,
+        "total_11_pontos": total_11_pontos,
+        "total_12_pontos": total_12_pontos,
+        "total_13_pontos": total_13_pontos,
+        "total_14_pontos": total_14_pontos,
+        "total_15_pontos": total_15_pontos,
+        "resultados": resultados,
+    }
+
+def simular_metodo_1(db: Session, dados: SimulacaoMetodo1Request):
+    concursos = db.query(Concurso).filter(
+        Concurso.numero_concurso >= dados.concurso_inicial,
+        Concurso.numero_concurso <= dados.concurso_final
+    ).order_by(Concurso.numero_concurso.asc()).all()
+
+    if not concursos:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhum concurso encontrado no intervalo informado."
+        )
+
+    resultados = []
+    total_11_pontos = 0
+    total_12_pontos = 0
+    total_13_pontos = 0
+    total_14_pontos = 0
+    total_15_pontos = 0
+    total_jogos_gerados = 0
+
+    for concurso in concursos:
+        if concurso.numero_concurso <= 1:
+            continue
+
+        geracao = gerar_jogos_metodo_1(db, concurso.numero_concurso)
+        resultado_oficial = sorted(montar_dezenas(concurso))
+
+        jogos_resultado = []
+
+        for jogo in geracao["jogos"]:
+            acertos = len(set(jogo["dezenas"]) & set(resultado_oficial))
+            total_jogos_gerados += 1
+
+            if acertos == 11:
+                total_11_pontos += 1
+            elif acertos == 12:
+                total_12_pontos += 1
+            elif acertos == 13:
+                total_13_pontos += 1
+            elif acertos == 14:
+                total_14_pontos += 1
+            elif acertos == 15:
+                total_15_pontos += 1
+
+            jogos_resultado.append({
+                "codigo": jogo["codigo"],
+                "dezenas": jogo["dezenas"],
+                "acertos": acertos,
+            })
+
+        resultados.append({
+            "numero_concurso": concurso.numero_concurso,
+            "numero_concurso_base": geracao["numero_concurso_base"],
+            "resultado_oficial": resultado_oficial,
+            "jogos": jogos_resultado,
+        })
+
+    return {
+        "total_concursos": len(resultados),
+        "total_jogos_gerados": total_jogos_gerados,
         "total_11_pontos": total_11_pontos,
         "total_12_pontos": total_12_pontos,
         "total_13_pontos": total_13_pontos,

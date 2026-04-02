@@ -9,6 +9,9 @@ from .schemas import (
     ConferenciaJogoResponse,
     SimulacaoHistoricoRequest,
     SimulacaoHistoricoResponse,
+    Metodo1Response,
+    SimulacaoMetodo1Request,
+    SimulacaoMetodo1Response,
 )
 from .crud import (
     listar_concursos,
@@ -19,6 +22,7 @@ from .crud import (
     atualizar_concurso,
     conferir_jogo,
     simular_historico,
+    simular_metodo_1,
 )
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -92,3 +96,14 @@ def post_simular_historico(
     db: Session = Depends(get_db)
 ):
     return simular_historico(db, dados)
+
+@app.get("/metodos/metodo-1/{numero_concurso_alvo}", response_model=Metodo1Response)
+def get_metodo_1(numero_concurso_alvo: int, db: Session = Depends(get_db)):
+    return gerar_jogos_metodo_1(db, numero_concurso_alvo)
+
+@app.post("/simulacoes/metodo-1", response_model=SimulacaoMetodo1Response)
+def post_simular_metodo_1(
+    dados: SimulacaoMetodo1Request,
+    db: Session = Depends(get_db)
+):
+    return simular_metodo_1(db, dados)
