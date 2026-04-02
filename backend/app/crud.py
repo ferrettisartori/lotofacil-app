@@ -1,7 +1,13 @@
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
 from .models import Concurso
-from .schemas import ConcursoCreate, ConcursoUpdate
+from .schemas import (
+    ConcursoCreate,
+    ConcursoUpdate,
+    ConferenciaJogoRequest,
+    SimulacaoHistoricoRequest,
+)
 
 
 def ordenar_bolas(dados: dict) -> dict:
@@ -125,6 +131,15 @@ def buscar_concurso_por_numero(db: Session, numero_concurso: int):
     return serializar_concurso(concurso)
 
 
+def buscar_concurso_por_id(db: Session, concurso_id: int):
+    concurso = db.query(Concurso).filter(Concurso.id == concurso_id).first()
+
+    if not concurso:
+        raise HTTPException(status_code=404, detail="Concurso não encontrado.")
+
+    return serializar_concurso(concurso)
+
+
 def buscar_ultimo_concurso(db: Session):
     concurso = db.query(Concurso).order_by(Concurso.numero_concurso.desc()).first()
 
@@ -178,10 +193,88 @@ def atualizar_concurso(db: Session, concurso_id: int, dados: ConcursoUpdate):
     db.refresh(concurso)
     return serializar_concurso(concurso)
 
-def buscar_concurso_por_id(db: Session, concurso_id: int):
-    concurso = db.query(Concurso).filter(Concurso.id == concurso_id).first()
+
+def conferir_jogo(db: Session, dados: ConferenciaJogoRequest):
+    concurso = db.query(Concurso).filter(
+        Concurso.numero_concurso == dados.numero_concurso
+    ).first()
 
     if not concurso:
         raise HTTPException(status_code=404, detail="Concurso não encontrado.")
 
-    return serializar_concurso(concurso)
+    dezenas_sorteadas = sorted(montar_dezenas(concurso))
+    dezenas_jogo = sorted(dados.jogo)
+
+    dezenas_acertadas = sorted(list(set(dezenas_jogo) & set(dezenas_sorteadas)))
+    dezenas_nao_acertadas = sorted(list(set(dezenas_jogo) - set(dezenas_sorteadas)))
+    qtd_acertos = len(dezenas_acertadas)
+
+    return {
+        "numero_concurso": concurso.numero_concurso,
+        "dezenas_jogo": dezenas_jogo,
+        "dezenas_sorteadas": dezenas_sorteadas,
+        "dezenas_acertadas": dezenas_acertadas,
+        "dezenas_nao_acertadas": dezenas_nao_acertadas,
+        "qtd_acertos": qtd_acertos,
+    }
+
+
+def simular_historico(db: Session, dados: SimulacaoHistoricoRequest):
+    concursos = db.query(Concurso).filter(
+        Concurso.numero_concurso >= dados.concurso_inicial,
+        Concurso.numero_concurso <= dados.concurso_final
+    ).order_by(Concurso.numero_concurso.asc()).all()
+
+    if not concursos:
+        raise HTTPException(status_code=404, detail="Nenhum concurso encontrado no intervalo informado.")
+
+    resultados = []
+    total_11_pontos = 0
+    total_12_pontos = 0
+    total_13_pontos = 0
+    total_14_pontos = 0
+    total_15_pontos = 0
+
+    for concurso in concursos:
+        resultado_oficial = sorted(montar_dezenas(concurso))
+        jogos_resultado = []
+
+        for indice, jogo in enumerate(dados.jogos, start=1):
+            acertos = len(set(jogo) & set(resultado_oficial))
+
+            if acertos == 11:
+                total_11_pontos += 1
+            elif acertos == 12:
+                total_12_pontos += 1
+            elif acertos == 13:
+                total_13_pontos += 1
+            elif acertos == 14:
+                total_14_pontos += 1
+            elif acertos == 15:
+                total_15_pontos += 1
+
+            jogos_resultado.append({
+                "indice_jogo": indice,
+                "dezenas": jogo,
+                "acertos": acertos,
+            })
+
+        resultados.append({
+            "numero_concurso": concurso.numero_concurso,
+            "resultado_oficial": resultado_oficial,
+            "jogos": jogos_resultado,
+        })
+
+    total_concursos = len(concursos)
+    total_jogos_testados = total_concursos * len(dados.jogos)
+
+    return {
+        "total_concursos": total_concursos,
+        "total_jogos_testados": total_jogos_testados,
+        "total_11_pontos": total_11_pontos,
+        "total_12_pontos": total_12_pontos,
+        "total_13_pontos": total_13_pontos,
+        "total_14_pontos": total_14_pontos,
+        "total_15_pontos": total_15_pontos,
+        "resultados": resultados,
+    }

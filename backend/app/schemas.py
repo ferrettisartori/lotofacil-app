@@ -81,3 +81,84 @@ class ConcursoResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ConferenciaJogoRequest(BaseModel):
+    numero_concurso: int
+    jogo: list[int]
+
+    @field_validator("jogo")
+    @classmethod
+    def validar_jogo(cls, value: list[int]) -> list[int]:
+        if len(value) != 15:
+            raise ValueError("O jogo deve conter exatamente 15 dezenas.")
+
+        if len(set(value)) != 15:
+            raise ValueError("As dezenas do jogo devem ser únicas.")
+
+        for dezena in value:
+            if dezena < 1 or dezena > 25:
+                raise ValueError("Cada dezena do jogo deve estar entre 1 e 25.")
+
+        return sorted(value)
+
+
+class ConferenciaJogoResponse(BaseModel):
+    numero_concurso: int
+    dezenas_jogo: list[int]
+    dezenas_sorteadas: list[int]
+    dezenas_acertadas: list[int]
+    dezenas_nao_acertadas: list[int]
+    qtd_acertos: int
+
+
+class SimulacaoHistoricoRequest(BaseModel):
+    concurso_inicial: int
+    concurso_final: int
+    jogos: list[list[int]]
+
+    @field_validator("jogos")
+    @classmethod
+    def validar_jogos(cls, value: list[list[int]]) -> list[list[int]]:
+        if not value:
+            raise ValueError("Informe pelo menos um jogo para simulação.")
+
+        jogos_normalizados = []
+
+        for jogo in value:
+            if len(jogo) != 15:
+                raise ValueError("Cada jogo deve conter exatamente 15 dezenas.")
+
+            if len(set(jogo)) != 15:
+                raise ValueError("As dezenas de cada jogo devem ser únicas.")
+
+            for dezena in jogo:
+                if dezena < 1 or dezena > 25:
+                    raise ValueError("Cada dezena deve estar entre 1 e 25.")
+
+            jogos_normalizados.append(sorted(jogo))
+
+        return jogos_normalizados
+
+
+class ResultadoJogoSimulado(BaseModel):
+    indice_jogo: int
+    dezenas: list[int]
+    acertos: int
+
+
+class ResultadoConcursoSimulado(BaseModel):
+    numero_concurso: int
+    resultado_oficial: list[int]
+    jogos: list[ResultadoJogoSimulado]
+
+
+class SimulacaoHistoricoResponse(BaseModel):
+    total_concursos: int
+    total_jogos_testados: int
+    total_11_pontos: int
+    total_12_pontos: int
+    total_13_pontos: int
+    total_14_pontos: int
+    total_15_pontos: int
+    resultados: list[ResultadoConcursoSimulado]

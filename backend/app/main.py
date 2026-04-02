@@ -1,13 +1,24 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from .database import get_db
-from .schemas import ConcursoCreate, ConcursoUpdate, ConcursoResponse
+from .schemas import (
+    ConcursoCreate,
+    ConcursoUpdate,
+    ConcursoResponse,
+    ConferenciaJogoRequest,
+    ConferenciaJogoResponse,
+    SimulacaoHistoricoRequest,
+    SimulacaoHistoricoResponse,
+)
 from .crud import (
     listar_concursos,
     buscar_concurso_por_numero,
+    buscar_concurso_por_id,
     buscar_ultimo_concurso,
     criar_concurso,
     atualizar_concurso,
+    conferir_jogo,
+    simular_historico,
 )
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -67,3 +78,17 @@ from .crud import (
     criar_concurso,
     atualizar_concurso,
 )
+
+@app.post("/simulacoes/conferir", response_model=ConferenciaJogoResponse)
+def post_conferir_jogo(
+    dados: ConferenciaJogoRequest,
+    db: Session = Depends(get_db)
+):
+    return conferir_jogo(db, dados)
+
+@app.post("/simulacoes/historico", response_model=SimulacaoHistoricoResponse)
+def post_simular_historico(
+    dados: SimulacaoHistoricoRequest,
+    db: Session = Depends(get_db)
+):
+    return simular_historico(db, dados)
